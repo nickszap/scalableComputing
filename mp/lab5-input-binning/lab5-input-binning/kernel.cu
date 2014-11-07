@@ -17,17 +17,26 @@ __global__ void gpu_normal_kernel(float* in_val, float* in_pos, float* out,
     unsigned int grid_size, unsigned int num_in) {
 
     // INSERT KERNEL CODE HERE
-
-
-
-
-
-
-
-
-
-
-
+    /* instructions:
+    Edit the kernel gpu normal kernel in the ﬁle kernel.cu to imple-
+ment the same computation as cpu normal on the GPU. Note however that
+cpu normal performs the computation using a scatter pattern. For the kernel
+gpu normal kernel, you are required to use a gather pattern which is more
+eﬃcient.
+		*/
+    int outIdx;
+    float in_val2, dist2;
+    float sum=0.0;
+    
+    outIdx = blockDim.x * blockIdx.x + threadIdx.x;
+    if (outIdx<grid_size){ //don't exceed bounds of output array
+      for(unsigned int inIdx = 0; inIdx < num_in; ++inIdx) {
+          in_val2 = in_val[inIdx]*in_val[inIdx];
+          dist2 = in_pos[inIdx]- (float) outIdx; dist2 = dist2*dist2;
+          sum += in_val2/dist2;
+      }
+      out[outIdx] = sum;
+    }
 
 }
 
