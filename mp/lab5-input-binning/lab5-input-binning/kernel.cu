@@ -21,8 +21,7 @@ __global__ void gpu_normal_kernel(float* in_val, float* in_pos, float* out,
     Edit the kernel gpu normal kernel in the ﬁle kernel.cu to imple-
 ment the same computation as cpu normal on the GPU. Note however that
 cpu normal performs the computation using a scatter pattern. For the kernel
-gpu normal kernel, you are required to use a gather pattern which is more
-eﬃcient.
+gpu normal kernel, you are required to use a gather pattern which is more efficient.
 		*/
     int outIdx;
     float in_val2, dist2;
@@ -44,17 +43,27 @@ __global__ void gpu_cutoff_kernel(float* in_val, float* in_pos, float* out,
     unsigned int grid_size, unsigned int num_in, float cutoff2) {
 
     // INSERT KERNEL CODE HERE
-
-
-
-
-
-
-
-
-
-
-
+    /*
+    Edit the kernel gpu cutoff kernel in the ﬁle kernel.cu to imple-
+ment the computation on the GPU, this time only considering input values that
+fall within a cutoff range of the output grid point.
+    */
+    
+    int outIdx;
+    float in_val2, dist2;
+    float sum=0.0;
+    
+    outIdx = blockDim.x * blockIdx.x + threadIdx.x;
+    if (outIdx<grid_size){ //don't exceed bounds of output array
+      for(unsigned int inIdx = 0; inIdx < num_in; ++inIdx) {
+          in_val2 = in_val[inIdx]*in_val[inIdx];
+          dist2 = in_pos[inIdx]- (float) outIdx; dist2 = dist2*dist2;
+          if (dist2<=cutoff2){
+  	      	sum += in_val2/dist2;
+  	      }
+      }
+      out[outIdx] = sum;
+    }
 
 }
 
@@ -63,23 +72,42 @@ __global__ void gpu_cutoff_binned_kernel(unsigned int* binPtrs,
     unsigned int grid_size, float cutoff2) {
 
     // INSERT KERNEL CODE HERE
+    /*
+    Edit the kernel gpu cutoff binned kernel in the ﬁle kernel.cu to
+implement the computation on the GPU. In this version, the input has been
+sorted into bins for you. You must loop over the bins and for each bin check if
+either of its bounds is within the cutoff range. If yes, you must loop over the
+input elements in the bin, check if each element is within the cutoff range, and
+if yes include it in your computation.
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+		From the cpu_preprocess(), it looks like binPtrs[i] is the left index of bin i.
+		The provided index/count directly accesses the sorted arrays.
+    */
+    
+    int outIdx, iBinL, iBinR;
+    float in_val2, dist2, dist2L, dist2R;
+    float sum=0.0;
+    
+    outIdx = blockDim.x * blockIdx.x + threadIdx.x;
+    if (outIdx<grid_size){ //don't exceed bounds of output array
+    	for (unsigned int iBin=0; iBin<NUM_BINS; iBin++){
+    		iBinL = binPtrs[iBin]; iBinR = binPtrs[iBin+1];
+    		dist2L = in_pos_sorted[iBinL]- (float) outIdx; dist2L = dist2L*dist2L;
+    		dist2R = in_pos_sorted[iBinR]- (float) outIdx; dist2R = dist2R*dist2R;
+    		if (dist2L > cutoff2 && dist2R>cutoff2){ //bin outside cutoff
+    			continue;
+    		}
+      	for(unsigned int inIdx = iBinL; inIdx < iBinR; ++inIdx) {
+      		//do < iBinR to avoid double counting borders
+        	in_val2 = in_val_sorted[inIdx]*in_val_sorted[inIdx];
+          dist2 = in_pos_sorted[inIdx]- (float) outIdx; dist2 = dist2*dist2;
+          if (dist2<=cutoff2){
+  	      	sum += in_val2/dist2;
+  	      }
+      	} //inIdx
+      } //iBin
+      out[outIdx] = sum;
+    } //outIdx
 
 }
 
