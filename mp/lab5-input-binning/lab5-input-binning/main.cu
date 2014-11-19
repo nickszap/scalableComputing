@@ -292,7 +292,11 @@ int main(int argc, char* argv[])
 
     printf("Verifying results..."); fflush(stdout);
 
-    verify(in_val_h, in_pos_h, out_h, grid_size, num_in);
+    if(mode == CPU_NORMAL || mode == GPU_NORMAL) {
+        verify(in_val_h, in_pos_h, out_h, grid_size, num_in);
+    } else {
+        verify_cutoff(in_val_h, in_pos_h, out_h, grid_size, num_in, cutoff2);
+    }
 
     // Free memory ------------------------------------------------------------
 
