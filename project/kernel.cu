@@ -8,7 +8,7 @@ __host__ __device__ int indexFlat(int iSimu, int iAsset, int nSimu){
 }
 
 __device__ float priceModel(float val, int i){
-	return val+(val/100.)*sin((float) i);
+	return val+(val/100.)*sin(val + (float) i);
 }
 
 __global__ void simPrice(float* prices, float* initialPrices, const int nSimu, const int nSteps) {

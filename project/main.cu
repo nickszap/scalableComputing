@@ -94,7 +94,7 @@ int main(int argc, char**argv) {
     startTime(&timer);
 
     const unsigned int THREADS_PER_BLOCK = 64;
-    const unsigned int numBlocks = (nTotal - 1)/THREADS_PER_BLOCK + 1;
+    const unsigned int numBlocks = (nSimu - 1)/THREADS_PER_BLOCK + 1;
     dim3 gridDim(numBlocks, 1, 1), blockDim(THREADS_PER_BLOCK, 1, 1);
     simPrice <<< gridDim, blockDim >>> (prices_d, initialPrices_d, nSimu,nSteps);
 
