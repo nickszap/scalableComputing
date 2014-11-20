@@ -64,7 +64,7 @@ __global__ void gpu_block_queuing_kernel(unsigned int *nodePtrs,
   // Loop over all nodes in the curent level.
   __shared__ int nextLevelNodes_s[BQ_CAPACITY];
   __shared__ int numNextLevelNodes_s; //can't initialize shared vars
-  if (threadIdx.x==0){
+  if (threadIdx.x==0){ //dunno if it matters if all threads modify
   	numNextLevelNodes_s=0;
   }
   __syncthreads();
@@ -107,7 +107,7 @@ __global__ void gpu_block_queuing_kernel(unsigned int *nodePtrs,
   	iStartGlobal = atomicAdd(numNextLevelNodes,numNextLevelNodes_s);
   }
   __syncthreads();
-  //fill in global queue
+  //fill in global queue collaboratively
   nSteps = (numNextLevelNodes_s-1)/blockDim.x+1;
   for (unsigned int iStep=0; iStep<nSteps; iStep++){
   	idx = iStep*blockDim.x+threadIdx.x;
