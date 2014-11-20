@@ -59,7 +59,7 @@ int main(int argc, char**argv) {
     	
 
     stopTime(&timer); printf("%f s\n", elapsedTime(timer));
-    printf("    Case = %u assets with %u simulations \n", nAssets, nSimu);
+    printf("  Case = %u assets for %u steps with %u simulations \n", nAssets, nSteps, nSimu);
 
     // Allocate device variables ----------------------------------------------
 
@@ -93,10 +93,7 @@ int main(int argc, char**argv) {
     printf("Launching kernel..."); fflush(stdout);
     startTime(&timer);
 
-    const unsigned int THREADS_PER_BLOCK = 64;
-    const unsigned int numBlocks = (nSimu - 1)/THREADS_PER_BLOCK + 1;
-    dim3 gridDim(numBlocks, 1, 1), blockDim(THREADS_PER_BLOCK, 1, 1);
-    simPrice <<< gridDim, blockDim >>> (prices_d, initialPrices_d, nSimu,nSteps);
+    launch_kernel(prices_d, initialPrices_d, nSimu,nSteps);
 
     cuda_ret = cudaDeviceSynchronize();
     if(cuda_ret != cudaSuccess) FATAL("Unable to launch kernel");
