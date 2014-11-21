@@ -32,9 +32,10 @@ float priceModel_jump(float val, int nNews, float *lambdaNews, float *stdevNews,
 	float dVal = 0.0;
 	for (int iNews=0; iNews<nNews; iNews++){
 		//int nNewsEvents = curand_poisson(stateRand, (double) lambdaNews[iNews]);
-		int nNewsEvents = llroundf( lambdaNews[iNews]/curand_uniform(stateRand) ) ; //curand_poisson is undefined????
+		int nNewsEvents = round( lambdaNews[iNews]/curand_uniform(stateRand) ) ; //curand_poisson is undefined????
 		for (int iEvent=0; iEvent<nNewsEvents; iEvent++){
-			dVal += curand_normal(stateRand)*stdevNews[iNews];
+			//dVal += curand_normal(stateRand)*stdevNews[iNews];
+			dVal += curand_normal(stateRand)*stdevNews[iNews]*val/100.;
 		}
 	}
 	
@@ -46,7 +47,7 @@ void simPrice_jump(float* prices, float* initialPrices, const int nSimu, const i
 		
 		const int nNews = 3;
 		float lambdaNews[nNews] = {.1,.05, .005}; //mean # news events per timestep
-		float stdevNews[nNews] = {1., 2., 5.};
+		float stdevNews[nNews] = {1., 2., 5.}; //useful either as dollars or percent of current price
 		
     int iSimu = blockDim.x * blockIdx.x + threadIdx.x;
     int iStep, iAsset;
@@ -132,7 +133,7 @@ void launch_kernel(float* prices_d, float* initialPrices_d, int nSimu, int nStep
     }
     else if (1){
     	//jump processes
-    	printf("Running jump price model\n");
+    	printf("Running jump price model...");
     	simPrice_jump <<< gridDim, blockDim >>> (prices_d, initialPrices_d, nSimu,nSteps);
     }
     else {
