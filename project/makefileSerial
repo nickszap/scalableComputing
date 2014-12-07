@@ -1,0 +1,14 @@
+
+CC       = nvcc
+CC_FLAGS = -O3 -I/usr/local/cuda/include -std=c++11
+LD_FLAGS = -lcudart -L/usr/local/cuda/lib64
+EXE	     = serialPrice
+
+default: $(EXE)
+
+$(EXE): serial.cpp
+	$(CC) $(CC_FLAGS) $(LD_FLAGS) serial.cpp -o $(EXE)
+
+clean:
+	rm -rf $(EXE)
+
