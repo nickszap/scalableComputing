@@ -126,12 +126,12 @@ void launch_kernel(float* prices_d, float* initialPrices_d, int nSimu, int nStep
     const unsigned int numBlocks = (nSimu - 1)/THREADS_PER_BLOCK + 1;
     dim3 gridDim(numBlocks, 1, 1), blockDim(THREADS_PER_BLOCK, 1, 1);
     
-    if (0){
+    if (1){
     	//mean reversion
     	printf("Running mean reversion  model\n");
     	simPrice_mr <<< gridDim, blockDim >>> (prices_d, initialPrices_d, nSimu,nSteps);
     }
-    else if (1){
+    else if (0){
     	//jump processes
     	printf("Running jump price model...");
     	simPrice_jump <<< gridDim, blockDim >>> (prices_d, initialPrices_d, nSimu,nSteps);

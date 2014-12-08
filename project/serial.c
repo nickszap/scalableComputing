@@ -5,35 +5,43 @@
 --------------------------------------------------------*/
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <sys/time.h>
-#include <random>
-#include <iostream>
+//#include <random>
 
-const unsigned int nAssets=2; //unclear how to set at runtime and allocate memory
+const int nAssets=2; //unclear how to set at runtime and allocate memory
+
 int indexFlat(int iSimu, int iAsset, int nSimu){
   return iAsset*nSimu+iSimu; //neighboring threads should be neighbors in memory
 }
 
 //price evolution -------------------------------------
-float priceModel_meanReversion(float val, float meanVal, float revRate, float stdev, std::normal_distribution<float> distribution, std::default_random_engine generator){
+float genUniform(){
+  //uniform random number in [0,1]
+  float val = (float) rand();
+  val /= RAND_MAX;
+  return val;
+}
+
+float priceModel_meanReversion(float val, float meanVal, float revRate, float stdev){
 	// dx = k*dx_mean + sigma*dz
-	float vol = distribution(generator); vol*=stdev; //volatility
+	float vol = genUniform(); vol = 2.0*vol-1.0; //(-1,1)
+	vol*=stdev; //volatility
 	return val+revRate*(meanVal-val)+vol;
 }
 
 void simPrice_mr(float* prices, float* initialPrices, const int nSimu, const int nSteps) {
 		
-		float meanVal[nAssets] = {7., 25.};
-		float revRate[nAssets] = {.01, .5};
-		float stdev[nAssets] = {.5, .01};
+		float meanVal[nAssets]; meanVal[0] = 7.; meanVal[1]= 25.;
+		float revRate[nAssets]; revRate[0] = .01; revRate[1] = .5;
+		float stdev[nAssets]; stdev[0]=.5; stdev[1]=.01;
     
     // seed the random number generator
-    std::default_random_engine generator;
-    std::normal_distribution<float> distribution(0.0,1.0); //val=distribution(generator)
-
-    for (int iSimu=0; iSimu<nSimu; iSimu++){
+    srand(0);
+    
+    int iSimu;
+    for (iSimu=0; iSimu<nSimu; iSimu++){
       int iStep, iAsset;
-    	float prices_t[nAssets];
     
     	//initial prices
     	for (iAsset=0; iAsset<nAssets; iAsset++){
@@ -43,8 +51,8 @@ void simPrice_mr(float* prices, float* initialPrices, const int nSimu, const int
     	//time evolution
     	for (iStep=0; iStep<nSteps; iStep++){
     		for (iAsset=0; iAsset<nAssets; iAsset++){
-    			//prices_t[iAsset] = priceModel(prices_t[iAsset], iSimu);
-    			prices[indexFlat(iSimu, iAsset,nSimu)] = priceModel_meanReversion(prices[indexFlat(iSimu, iAsset,nSimu)], meanVal[iAsset], revRate[iAsset], stdev[iAsset], distribution, generator);
+    		  int iPrice = indexFlat(iSimu, iAsset,nSimu);
+    			prices[iPrice] = priceModel_meanReversion(prices[iPrice], meanVal[iAsset], revRate[iAsset], stdev[iAsset]);
     		}
     	}
     	
@@ -79,8 +87,8 @@ int main(int argc, char**argv) {
     startTime(&timer);
 
     unsigned int nSimu, nSteps;
-    nSimu = 200;
-    nSteps = 100;
+    nSimu = 10000;
+    nSteps = 1000;
     
     unsigned int nTotal = nAssets*nSimu;
     float* prices_h = (float*) malloc( sizeof(float)*nTotal );
@@ -104,6 +112,7 @@ int main(int argc, char**argv) {
     stopTime(&timer); printf("%f s\n", elapsedTime(timer));
     
     // print some output ----------------------------------------
+#if 0
     int iAsset, iSimu, iPrice;
     for (iAsset=0; iAsset<nAssets; iAsset++){
     	printf("\nAsset %d price0 %g\n",iAsset, initialPrices_h[iAsset]);
@@ -113,7 +122,7 @@ int main(int argc, char**argv) {
     	}
     }
     printf("\n");
-    
+#endif
     // Free memory ------------------------------------------------------------
 
     free(prices_h);

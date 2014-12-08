@@ -45,8 +45,8 @@ int main(int argc, char**argv) {
     startTime(&timer);
 
     unsigned int nSimu, nSteps;
-    nSimu = 200;
-    nSteps = 100;
+    nSimu = 10000;
+    nSteps = 1000;
     
     unsigned int nTotal = nAssets*nSimu;
     float* prices_h = (float*) malloc( sizeof(float)*nTotal );
@@ -111,6 +111,7 @@ int main(int argc, char**argv) {
     stopTime(&timer); printf("%f s\n\n", elapsedTime(timer));
     
     // print some output ----------------------------------------
+#if 0
     int iAsset, iSimu, iPrice;
     for (iAsset=0; iAsset<nAssets; iAsset++){
     	printf("\nAsset %d price0 %g\n",iAsset, initialPrices_h[iAsset]);
@@ -120,7 +121,8 @@ int main(int argc, char**argv) {
     	}
     }
     printf("\n");
-    
+#endif
+
     // Free memory ------------------------------------------------------------
 
     free(prices_h);
