@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include <sys/time.h>
 #include "kernel.cu"
+//#include "kernel_opt.cu"
 
 // Declare error and timing utilities =========================================
 
@@ -45,7 +46,7 @@ int main(int argc, char**argv) {
     startTime(&timer);
 
     unsigned int nSimu, nSteps;
-    nSimu = 10000;
+    nSimu = 100000;
     nSteps = 1000;
     
     unsigned int nTotal = nAssets*nSimu;
@@ -54,7 +55,7 @@ int main(int argc, char**argv) {
     float initialPrices_h[nAssets];
     int i;
     for (i=0; i<nAssets; i++){
-    	initialPrices_h[i] = (i+1)*10.0;
+    	initialPrices_h[i] = (i+1)*2.0;
     }
     	
 

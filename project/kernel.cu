@@ -20,7 +20,8 @@ float priceModel_fake(float val, int i){
 __device__ 
 float priceModel_meanReversion(float val, float meanVal, float revRate, float stdev, curandState *stateRand){
 	// dx = k*dx_mean + sigma*dz
-	float vol = curand_normal(stateRand)*stdev; //volatility
+	//float vol = curand_normal(stateRand)*stdev; //volatility
+	float vol = curand_uniform(stateRand); vol = 2.0*vol-1.0; vol*=stdev; //(-1,1)*stdev
 	return val+revRate*(meanVal-val)+vol;
 }
 
@@ -35,7 +36,9 @@ float priceModel_jump(float val, int nNews, float *lambdaNews, float *stdevNews,
 		int nNewsEvents = round( lambdaNews[iNews]/curand_uniform(stateRand) ) ; //curand_poisson is undefined????
 		for (int iEvent=0; iEvent<nNewsEvents; iEvent++){
 			//dVal += curand_normal(stateRand)*stdevNews[iNews];
-			dVal += curand_normal(stateRand)*stdevNews[iNews]*val/100.;
+			//dVal += curand_normal(stateRand)*stdevNews[iNews]*val/100.;
+			float vol = curand_uniform(stateRand); vol = 2.0*vol-1.0; vol*=stdevNews[iNews]*val/100.;
+			dVal += vol;
 		}
 	}
 	
@@ -122,16 +125,17 @@ void launch_kernel(float* prices_d, float* initialPrices_d, int nSimu, int nStep
 		//we need additional logic based on the chosen pricing model
 		//e.g., cudarand API "robust device" poisson distribution requires function calls on host
 		
-		const unsigned int THREADS_PER_BLOCK = 64;
+		const unsigned int THREADS_PER_BLOCK = 128;
+		printf(" THREADS_PER_BLOCK= %d \n", THREADS_PER_BLOCK);
     const unsigned int numBlocks = (nSimu - 1)/THREADS_PER_BLOCK + 1;
     dim3 gridDim(numBlocks, 1, 1), blockDim(THREADS_PER_BLOCK, 1, 1);
     
-    if (1){
+    if (0){
     	//mean reversion
     	printf("Running mean reversion  model\n");
     	simPrice_mr <<< gridDim, blockDim >>> (prices_d, initialPrices_d, nSimu,nSteps);
     }
-    else if (0){
+    else if (1){
     	//jump processes
     	printf("Running jump price model...");
     	simPrice_jump <<< gridDim, blockDim >>> (prices_d, initialPrices_d, nSimu,nSteps);

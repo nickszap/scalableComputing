@@ -6,8 +6,8 @@ EXE	     = derivPrice
 
 default: $(EXE)
 
-$(EXE): kernel.cu main.cu
-	$(CC) $(CC_FLAGS) $(LD_FLAGS) main.cu -o $(EXE)
+$(EXE): kernel.cu main.cu kernel_opt.cu main_opt.cu
+	$(CC) $(CC_FLAGS) $(LD_FLAGS) main_opt.cu -o $(EXE)
 
 clean:
 	rm -rf $(EXE)

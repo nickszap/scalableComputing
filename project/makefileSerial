@@ -1,7 +1,7 @@
 
 CC       = nvcc
 CC_FLAGS = -O3 -I/usr/local/cuda/include 
-LD_FLAGS = -lcudart -L/usr/local/cuda/lib64
+LD_FLAGS = -lcudart -L/usr/local/cuda/lib64 -lm
 EXE	     = serialPrice
 
 default: $(EXE)

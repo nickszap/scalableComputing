@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/time.h>
+#include <math.h>
 //#include <random>
 
 const int nAssets=2; //unclear how to set at runtime and allocate memory
@@ -28,6 +29,25 @@ float priceModel_meanReversion(float val, float meanVal, float revRate, float st
 	float vol = genUniform(); vol = 2.0*vol-1.0; //(-1,1)
 	vol*=stdev; //volatility
 	return val+revRate*(meanVal-val)+vol;
+}
+
+float priceModel_jump(float val, int nNews, float *lambdaNews, float *stdevNews){
+	// sum of jump perturbations (e.g., news events) modelled as poisson processes.
+	//data-dependent thread divergence as threads compute different numbers of events.
+	
+	float dVal = 0.0;
+	int iNews, iEvent;
+	for (iNews=0; iNews<nNews; iNews++){
+		//int nNewsEvents = curand_poisson(stateRand, (double) lambdaNews[iNews]);
+		int nNewsEvents = (int) round( lambdaNews[iNews]/genUniform() ) ;
+		for (iEvent=0; iEvent<nNewsEvents; iEvent++){
+			//dVal += curand_normal(stateRand)*stdevNews[iNews];
+			float vol = genUniform(); vol = 2.0*vol-1.0;
+			dVal += vol*stdevNews[iNews]*val/100.;
+		}
+	}
+	
+	return val+dVal;
 }
 
 void simPrice_mr(float* prices, float* initialPrices, const int nSimu, const int nSteps) {
@@ -53,6 +73,37 @@ void simPrice_mr(float* prices, float* initialPrices, const int nSimu, const int
     		for (iAsset=0; iAsset<nAssets; iAsset++){
     		  int iPrice = indexFlat(iSimu, iAsset,nSimu);
     			prices[iPrice] = priceModel_meanReversion(prices[iPrice], meanVal[iAsset], revRate[iAsset], stdev[iAsset]);
+    		}
+    	}
+    	
+    }//iSimu
+}
+
+void simPrice_jump(float* prices, float* initialPrices, const int nSimu, const int nSteps) {
+		
+		const int nNews = 3;
+		float lambdaNews[nNews];
+		lambdaNews[0] = .1; lambdaNews[1]=.05; lambdaNews[2]=.005; //mean # news events per timestep
+		float stdevNews[nNews];
+		stdevNews[0] = 1.; stdevNews[1]= 2.; stdevNews[2]=5.; //useful either as dollars or percent of current price
+    
+    // seed the random number generator
+    srand(0);
+    
+    int iSimu;
+    for (iSimu=0; iSimu<nSimu; iSimu++){
+      int iStep, iAsset;
+    
+    	//initial prices
+    	for (iAsset=0; iAsset<nAssets; iAsset++){
+    		prices[indexFlat(iSimu, iAsset,nSimu)] = initialPrices[iAsset];
+    	}
+    	
+    	//time evolution
+    	for (iStep=0; iStep<nSteps; iStep++){
+    		for (iAsset=0; iAsset<nAssets; iAsset++){
+    		  int iPrice = indexFlat(iSimu, iAsset,nSimu);
+    		  prices[iPrice] = priceModel_jump(prices[iPrice], nNews, lambdaNews, stdevNews);
     		}
     	}
     	
@@ -87,7 +138,7 @@ int main(int argc, char**argv) {
     startTime(&timer);
 
     unsigned int nSimu, nSteps;
-    nSimu = 10000;
+    nSimu = 100000;
     nSteps = 1000;
     
     unsigned int nTotal = nAssets*nSimu;
@@ -107,8 +158,9 @@ int main(int argc, char**argv) {
     printf("Launching kernel..."); fflush(stdout);
     startTime(&timer);
     
-    simPrice_mr(prices_h, initialPrices_h, nSimu, nSteps);
-
+    //simPrice_mr(prices_h, initialPrices_h, nSimu, nSteps);
+    simPrice_jump(prices_h, initialPrices_h, nSimu, nSteps);
+    
     stopTime(&timer); printf("%f s\n", elapsedTime(timer));
     
     // print some output ----------------------------------------
